@@ -1,0 +1,10 @@
+node_modules/
+iisnode/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.local
+*.pem
+.vscode/
+.idea/

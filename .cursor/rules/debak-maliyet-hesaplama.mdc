@@ -1,0 +1,14 @@
+---
+description: DEBAK Maliyet Hesaplama sert kuralları — formül, gizlilik, kayıt
+alwaysApply: true
+---
+
+# DEBAK Maliyet Hesaplama
+
+Her oturumda [AGENTS.md](AGENTS.md) geçerlidir.
+
+- Formüller: `public/app.js` `recalculate()`; kullanıcı onaylamadan değiştirme (`docs/formulas.md`).
+- `wasteRate` ve `profitRate` kesir (yüzde değil).
+- Ortak şifre / cookie sırrını sohbette yazma; `.env` commit etme.
+- `data/calculations.json` canlı kayıttır; kullanıcı istemeden silme.
+- IIS / yayın yalnız açıkça istendiğinde.

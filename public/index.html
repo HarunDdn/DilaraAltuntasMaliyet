@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Debak - Maliyet Hesaplama ve Teklif Yönetim Modülü</title>
+  <meta name="description" content="Debak Denizli Bakalit Kalıp Sanayi ve Ticaret A.Ş. - Maliyet Hesaplama ve Teklif Yönetim Modülü" />
+  <link rel="icon" href="/debak-logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="/style.css" />
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <!-- Login Gate -->
+  <main id="login-gate" class="login-page">
+    <section class="login-card">
+      <img class="login-logo" src="/debak-logo.jpg" alt="Debak Denizli Bakalit Kalıp Sanayi ve Ticaret A.Ş." />
+      <p class="eyebrow">KORUMALI ERİŞİM</p>
+      <h1>Maliyet Hesaplama</h1>
+      <p class="login-copy">Ortak hesaplama alanına erişmek için adınızı ve ekip şifresini girin.</p>
+      <form id="login-form">
+        <label>
+          <span>Adınız</span>
+          <input type="text" id="login-name" autoComplete="name" required maxLength="80" placeholder="Örn. Harun" />
+        </label>
+        <label>
+          <span>Ortak şifre</span>
+          <input type="password" id="login-password" autoComplete="current-password" required placeholder="Ekip şifresini girin" />
+        </label>
+        <p id="login-error" class="login-error" role="alert" style="display: none;"></p>
+        <button type="submit" id="login-btn" class="primary">Programa giriş yap</button>
+      </form>
+      <small>Kaydedilen hesaplamalarda girdiğiniz ad görünür.</small>
+    </section>
+  </main>
+
+  <!-- Main Calculator Application -->
+  <main id="app-root" style="display: none;">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="brand-block">
+        <img class="company-logo" src="/debak-logo.jpg" alt="Debak Denizli Bakalit Kalıp Sanayi ve Ticaret A.Ş." />
+        <div>
+          <h1>Teklif Yönetim Modülü</h1>
+          <p class="subtitle">Girişleri doldurun; maliyet ve satış sonuçları anında hesaplansın.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <span id="save-state" class="save-state" style="display: none;">Kaydedildi</span>
+        <button class="secondary" id="btn-clear">Temizle</button>
+        <button class="secondary" id="btn-print">Yazdır / PDF</button>
+        <button class="primary" id="btn-save-local">Kaydet</button>
+        <button class="primary list-save" id="btn-save-server">Ortak listeye ekle</button>
+        <button class="secondary" id="btn-logout">Çıkış</button>
+      </div>
+    </header>
+
+    <!-- Legend -->
+    <div class="legend" aria-label="Alan açıklamaları">
+      <span><i class="input-dot"></i> Veri girişi</span>
+      <span><i class="result-dot"></i> Otomatik hesap</span>
+    </div>
+
+    <!-- Top Summary Cards -->
+    <section class="summary">
+      <article class="result-card">
+        <span>Net maliyet</span>
+        <strong id="sum-base-cost">0,000 € / ad.</strong>
+      </article>
+      <article class="result-card">
+        <span>EX-WORK fiyatı</span>
+        <strong id="sum-ex-work">0,000 € / ad.</strong>
+      </article>
+      <article class="result-card featured">
+        <span>Satış fiyatı</span>
+        <strong id="sum-sale-price">0,000 € / ad.</strong>
+      </article>
+      <article class="result-card">
+        <span>Beklenen ciro</span>
+        <strong id="sum-revenue">0 €</strong>
+      </article>
+    </section>
+
+    <!-- Layout: Form Sections & Side Panel -->
+    <div class="layout">
+      <div class="form-column">
+        <!-- 01: Parça bilgileri -->
+        <section class="form-section">
+          <div class="section-heading">
+            <span>01</span>
+            <h2>Parça bilgileri</h2>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Müşteri adı</span>
+              <input type="text" id="inp-customerName" placeholder="Müşteri firmayı girin" />
+            </label>
+            <label class="field">
+              <span>Proje adı</span>
+              <input type="text" id="inp-projectName" placeholder="Proje adını girin" />
+            </label>
+            <label class="field">
+              <span>Parçanın adı</span>
+              <input type="text" id="inp-partName" placeholder="Parça adını girin" />
+            </label>
+            <label class="field">
+              <span>Artikel no.</span>
+              <input type="text" id="inp-articleNo" placeholder="Artikel / Kod no" />
+            </label>
+            <label class="field">
+              <span>Tarih</span>
+              <input type="date" id="inp-date" />
+            </label>
+            <label class="field">
+              <span>Malzeme cinsi</span>
+              <input type="text" id="inp-material" placeholder="Örn. PF31-9005" />
+            </label>
+            <label class="field">
+              <span>Parça hacmi</span>
+              <div class="input-wrap">
+                <input type="number" step="0.1" id="inp-volume" />
+                <b>cm³</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Malzeme yoğunluğu</span>
+              <div class="input-wrap">
+                <input type="number" step="0.01" id="inp-density" />
+                <b>g/cm³</b>
+              </div>
+            </label>
+            <div class="field calculated">
+              <span>Parça net ağırlığı</span>
+              <div><span id="res-netWeight">0,000</span><b>g</b></div>
+            </div>
+            <label class="field">
+              <span>Brüt ağırlık ilavesi</span>
+              <div class="input-wrap">
+                <input type="number" step="0.1" id="inp-grossExtra" />
+                <b>g</b>
+              </div>
+            </label>
+            <div class="field calculated">
+              <span>Parça brüt ağırlığı</span>
+              <div><span id="res-grossWeight">0,000</span><b>g</b></div>
+            </div>
+            <label class="field">
+              <span>Muhtemel fire oranı</span>
+              <div class="input-wrap">
+                <input type="number" step="0.1" id="inp-wasteRate" />
+                <b>%</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Hammadde peşin fiyatı</span>
+              <div class="input-wrap">
+                <input type="number" step="0.01" id="inp-materialPrice" />
+                <b>EUR/kg</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Yapılacak baskı adedi</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-quantity" />
+                <b>ad.</b>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- 02: Kalıp ve üretim -->
+        <section class="form-section">
+          <div class="section-heading">
+            <span>02</span>
+            <h2>Kalıp ve üretim</h2>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Kalıp göz adedi</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-cavities" />
+                <b>göz</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Baskı süresi</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-cycleSeconds" />
+                <b>sn</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Kalıp yeni yapım fiyatı</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-moldPrice" />
+                <b>EUR</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Senelik baskı adedi</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-annualMoldQuantity" />
+                <b>ad.</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Amortizasyon süresi</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-amortizationYears" />
+                <b>yıl</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Makine saat maliyeti</span>
+              <div class="input-wrap">
+                <input type="number" step="0.01" id="inp-machineHourly" />
+                <b>EUR/saat</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>İşçilik maliyeti</span>
+              <div class="input-wrap">
+                <input type="number" step="0.01" id="inp-laborHourly" />
+                <b>EUR/saat</b>
+              </div>
+            </label>
+            <div class="field calculated">
+              <span>Kalkülatif faiz (%10 × kapital)</span>
+              <div><span id="res-materialTotal">0</span><b>EUR</b></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 03: Ek parça ve operasyonlar -->
+        <section class="form-section">
+          <div class="section-heading">
+            <span>03</span>
+            <h2>Ek parça ve operasyonlar</h2>
+          </div>
+          <div id="extras-container" class="extras-list">
+            <!-- Dynamic rows will be inserted here -->
+          </div>
+          <div style="margin-top: 12px;">
+            <button type="button" class="add-extra" id="btn-add-extra">+ Yeni parça veya operasyon ekle</button>
+          </div>
+          <div class="extras-footer">
+            <div class="field calculated">
+              <span>Ek kalemler toplamı</span>
+              <div><span id="res-extrasTotal">0,000</span><b>EUR/ad.</b></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 04: Ambalaj ve nakliye -->
+        <section class="form-section">
+          <div class="section-heading">
+            <span>04</span>
+            <h2>Ambalaj ve nakliye</h2>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Ambalaj büyüklüğü</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-packageQuantity" />
+                <b>ad.</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Ambalaj maliyeti</span>
+              <div class="input-wrap">
+                <input type="number" step="0.01" id="inp-packageCost" />
+                <b>EUR</b>
+              </div>
+            </label>
+            <div class="field calculated">
+              <span>Ambalaj bedeli</span>
+              <div><span id="res-packaging">0,000</span><b>EUR/ad.</b></div>
+            </div>
+            <label class="field">
+              <span>Nakliye büyüklüğü</span>
+              <div class="input-wrap">
+                <input type="number" step="1" id="inp-shipmentQuantity" />
+                <b>ad.</b>
+              </div>
+            </label>
+            <label class="field">
+              <span>Nakliye bedeli</span>
+              <div class="input-wrap">
+                <input type="number" step="0.01" id="inp-shipmentCost" />
+                <b>EUR</b>
+              </div>
+            </label>
+            <div class="field calculated">
+              <span>Nakliye bedeli</span>
+              <div><span id="res-freight">0,000</span><b>EUR/ad.</b></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 05: Kâr oranı -->
+        <section class="form-section">
+          <div class="section-heading">
+            <span>05</span>
+            <h2>Kâr oranı</h2>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Kâr oranı</span>
+              <div class="input-wrap">
+                <input type="number" step="0.1" id="inp-profitRate" />
+                <b>%</b>
+              </div>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Calculation Panel -->
+      <aside class="calculation-panel">
+        <div class="panel-heading">
+          <p class="eyebrow">HESAP DÖKÜMÜ</p>
+          <h2>Birim maliyet</h2>
+        </div>
+        <div class="calc-line">
+          <span>Hammadde bedeli</span>
+          <b id="p-rawMaterial">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span>Kalıp bedeli</span>
+          <b id="p-mold">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span>Makine + işçilik</span>
+          <b id="p-machineLabor">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span>Kalkülatif faiz</span>
+          <b id="p-interest">0,000 €</b>
+        </div>
+        <div class="calc-line strong">
+          <span>Parçanın net maliyeti</span>
+          <b id="p-baseCost">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span>Ek parça ve operasyonlar</span>
+          <b id="p-extras">0,000 €</b>
+        </div>
+        <div class="calc-line strong">
+          <span>Ara toplam</span>
+          <b id="p-subtotal">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span id="p-profitLabel">Kâr payı (%20)</span>
+          <b id="p-profitAmount">0,000 €</b>
+        </div>
+        <div class="calc-line strong">
+          <span>EX-WORK fiyatı</span>
+          <b id="p-exWork">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span>Ambalaj</span>
+          <b id="p-packaging">0,000 €</b>
+        </div>
+        <div class="calc-line">
+          <span>Nakliye</span>
+          <b id="p-freight">0,000 €</b>
+        </div>
+
+        <div class="grand-total">
+          <span>Satış fiyatı</span>
+          <strong id="p-salePrice">0,000 €</strong>
+          <small>adet başına</small>
+        </div>
+
+        <div class="metrics">
+          <div>
+            <span>Beklenen ciro</span>
+            <strong id="p-revenue">0 €</strong>
+          </div>
+          <div>
+            <span>Malzeme tutarı</span>
+            <strong id="p-materialAmount">0 €</strong>
+          </div>
+        </div>
+        <p class="formula-note">Sonuçlar, orijinal şablondaki formüller temel alınarak hesaplanır.</p>
+      </aside>
+    </div>
+
+    <!-- Section: Shared Records -->
+    <section class="records-section" id="kayitlar">
+      <div class="records-heading">
+        <div>
+          <p class="eyebrow">ORTAK KAYITLAR</p>
+          <h2>Hesaplama listesi</h2>
+          <p>Programa giren herkes bu kayıtları görebilir.</p>
+        </div>
+        <div class="records-tools">
+          <label>
+            <span class="sr-only">Kayıtlarda ara</span>
+            <input type="search" id="search-input" placeholder="Müşteri, proje, parça, artikel veya malzeme ara" />
+          </label>
+          <button class="excel-export" id="btn-export-excel">Excel’e aktar</button>
+          <button class="secondary" id="btn-refresh-list">Yenile</button>
+        </div>
+      </div>
+      <div id="record-message" class="record-message" style="display: none;"></div>
+      <div class="table-scroll">
+        <table id="records-table">
+          <thead>
+            <tr>
+              <th>Müşteri</th>
+              <th>Proje</th>
+              <th>Parça</th>
+              <th>Kaydeden</th>
+              <th>Artikel no.</th>
+              <th>Malzeme</th>
+              <th>Tarih</th>
+              <th class="number-cell">Adet</th>
+              <th class="number-cell">Net maliyet</th>
+              <th class="number-cell">EX-WORK</th>
+              <th class="number-cell">Satış fiyatı</th>
+              <th class="number-cell">Beklenen ciro</th>
+              <th>Teklif durumu</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="records-tbody">
+            <!-- Dynamic project rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
