@@ -311,6 +311,25 @@ app.patch('/api/calculations', requireAuth, (req, res) => {
   res.json({ calculation: calculations[index] });
 });
 
+app.delete('/api/calculations/:id', requireAuth, (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) {
+    return res.status(400).json({ error: 'Kayıt ID gereklidir.' });
+  }
+
+  const calculations = readCalculations();
+  const index = calculations.findIndex(c => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Kayıt bulunamadı.' });
+  }
+
+  const [removed] = calculations.splice(index, 1);
+  writeCalculations(calculations);
+  console.log(`Kayıt silindi: ${removed.id} (${removed.partName}) — ${req.userName}`);
+
+  res.json({ id: removed.id });
+});
+
 // ---------------------------------------------------------------------------
 // Bilinmeyen API yolları: HTML değil JSON 404
 // ---------------------------------------------------------------------------

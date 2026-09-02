@@ -58,6 +58,7 @@ Zorunlu ikisinden biri eksikse **sunucu `exit(1)` ile kapanır** — kodda yedek
 | Bilinmeyen `/api/*` → JSON 404 | `app.all('/api/*')` |
 | Yığın izi sızdırmayan hata yakalayıcı | son `app.use((err, …))` |
 | `.env` / kaynak dosya erişim engeli | `web.config` → `BlockSensitiveFiles` + `hiddenSegments` |
+| WebDAV kapalı (DELETE 405 vermesin) | `web.config` → `<remove name="WebDAVModule" />` |
 
 İstemci tarafında `handleUnauthorized()` 401 alan her çağrıda giriş ekranına döner.
 
@@ -77,7 +78,7 @@ Zorunlu ikisinden biri eksikse **sunucu `exit(1)` ile kapanır** — kodda yedek
 | `formData` | tam form state (`extras` dahil) |
 | `createdAt` | ISO datetime |
 
-PATCH yalnız `quoteStatus` yazar ve değeri `ALLOWED_QUOTE_STATUS` beyaz listesine karşı doğrular. Kayıt silme yok.
+PATCH yalnız `quoteStatus` yazar ve değeri `ALLOWED_QUOTE_STATUS` beyaz listesine karşı doğrular. `DELETE /api/calculations/:id` kaydı `data/calculations.json`'dan kalıcı olarak siler (`requireAuth`; istemcide `confirm()` onayı).
 
 ## İstemci state
 
@@ -93,6 +94,7 @@ Yüzde alanları (`wasteRate`, `profitRate`) kesir. Ek kalem `id` yeni satırda 
 5. **Formu aç** → `formData` + üst alanlar `state`’e, sayfa başına kaydır
 6. **Teklif oluştur** → yeni pencerede İngilizce mektup (aynı müşteri+proje)
 7. **Excel’e aktar** → istemci CSV indirme (sunucu yok)
+8. **Sil** → onay sonrası DELETE; satır `rawCalculations`'tan düşer ve tablo yenilenir
 
 ## IIS
 

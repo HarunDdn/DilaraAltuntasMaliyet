@@ -756,7 +756,7 @@ tbody tr:last-child td {
 .status-editor {
   align-items: center;
   gap: 6px;
-  min-width: 255px;
+  min-width: 300px;
   display: flex;
 }
 
@@ -785,6 +785,23 @@ tbody tr:last-child td {
 }
 
 .status-save:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.status-delete {
+  color: #973c2e;
+  background: #ffe8e3;
+  border-color: var(--result-border);
+  padding: 7px 9px;
+}
+
+.status-delete:hover:not(:disabled) {
+  background: var(--result);
+  border-color: #d9705c;
+}
+
+.status-delete:disabled {
   opacity: 0.45;
   cursor: default;
 }

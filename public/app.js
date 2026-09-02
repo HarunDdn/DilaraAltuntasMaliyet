@@ -520,6 +520,7 @@ function renderTable() {
               <option value="Reddedildi" ${rec.quoteStatus === 'Reddedildi' ? 'selected' : ''}>3 — Reddedildi</option>
             </select>
             <button type="button" class="status-save" data-id="${rec.id}">Kaydet</button>
+            <button type="button" class="status-delete" data-id="${rec.id}" title="Kaydı ortak listeden sil">Sil</button>
           </div>
         </td>
         <td>
@@ -559,6 +560,32 @@ function renderTable() {
       } finally {
         e.target.disabled = false;
         e.target.textContent = 'Kaydet';
+      }
+    });
+  });
+
+  tbody.querySelectorAll('.status-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const item = rawCalculations.find(c => c.id === id);
+      if (!item) return;
+      if (!window.confirm(`"${item.partName}" kaydı ortak listeden kalıcı olarak silinecek. Onaylıyor musunuz?`)) return;
+
+      e.target.disabled = true;
+      e.target.textContent = '…';
+      try {
+        const res = await fetch(`/api/calculations/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.status === 401) return handleUnauthorized();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Kayıt silinemedi.');
+
+        rawCalculations = rawCalculations.filter(c => c.id !== id);
+        renderTable();
+        showRecordMessage(`${item.partName} ortak listeden silindi.`);
+      } catch (err) {
+        showRecordMessage(err.message || 'Kayıt silinemedi.');
+        e.target.disabled = false;
+        e.target.textContent = 'Sil';
       }
     });
   });
