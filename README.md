@@ -17,7 +17,7 @@ Bu klasörü açan Claude, Cursor, Gemini veya başka bir ajan **önce bunları 
 | [docs/architecture.md](docs/architecture.md) | Dosya haritası, JSON kayıt, IIS |
 | [.cursor/skills/debak-maliyet-hesaplama/SKILL.md](.cursor/skills/debak-maliyet-hesaplama/SKILL.md) | Cursor skill |
 
-Formüller orijinal şablona bağlıdır; kullanıcı onaylamadan değiştirme. Ortak şifreyi sohbette yazma. `data/calculations.json` canlı kayıttır.
+Formüller orijinal şablona bağlıdır; kullanıcı onaylamadan değiştirme. Sırlar `.env` içindedir — sohbette yazma, commit etme. `data/calculations.json` canlı kayıttır.
 
 ## Ne işe yarar
 
@@ -39,6 +39,30 @@ Tek sayfa. Giriş (ad + ekip şifresi) sonrası:
 
 Sağ panel birim dökümü; üstte özet kartlar. Altta ortak kayıt tablosu (müşteri+proje gruplu).
 
+## Kurulum
+
+Sırlar kodda tutulmaz. İlk kurulumda `.env` dosyası **zorunludur**; yoksa sunucu başlamaz.
+
+```bash
+cp .env.example .env
+```
+
+`.env` içine iki değeri yazın:
+
+| Değişken | Ne |
+|---|---|
+| `APP_PASSWORD` | Ekip giriş şifresi |
+| `COOKIE_SECRET` | Cookie imzalama sırrı, rastgele ≥32 karakter |
+| `COOKIE_SECURE` | HTTPS’te `true`, düz HTTP’de `false` |
+
+Sır üretmek için:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
+
+`COOKIE_SECRET` değiştiğinde tüm açık oturumlar geçersiz olur — herkes bir kez yeniden giriş yapar.
+
 ## Yerel çalıştırma
 
 ```bash
@@ -54,10 +78,12 @@ npm run dev
 
 Tarayıcı: [http://localhost:3000](http://localhost:3000)
 
-## Veri
+## Veri ve erişim
 
-Kayıtlar `data/calculations.json` dosyasına yazılır. IIS `data` klasörünü tarayıcıdan gizler. Yedek almadan dosyayı silme.
+Kayıtlar `data/calculations.json` dosyasına yazılır. Yedek almadan dosyayı silme.
+
+`/api/calculations` uçlarının tamamı (okuma dahil) giriş ister; giriş yapmayan istek `401` alır. Kimlik imzalı cookie’den okunur, istek gövdesinden değil. Giriş ekranı IP başına 15 dakikada 10 hatalı denemeden sonra kilitlenir. IIS tarafında `.env`, `data`, `docs`, `skills`, `node_modules` ve `.git` tarayıcıdan kapalıdır.
 
 ## Teknoloji
 
-Express 4, `cookie-parser`, statik `public/`. React/Next yok. Hesaplama tarayıcıda (`public/app.js`).
+Express 4, `cookie-parser` (imzalı cookie), statik `public/`. React/Next yok, ek bağımlılık yok — `.env` yükleyici ve deneme limiti `server.js` içinde. Hesaplama tarayıcıda (`public/app.js`).

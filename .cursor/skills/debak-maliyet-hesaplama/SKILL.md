@@ -11,7 +11,7 @@ Repo kökü: `AGENTS.md` → `docs/formulas.md`, `docs/architecture.md`, `README
 
 Formülleri kullanıcı onaylamadan değiştirme. Esas: [formulas.md](../../../docs/formulas.md). Hesap yalnız `public/app.js` → `recalculate()`.
 
-`wasteRate` / `profitRate` state’te kesir. Şifreyi sohbette yazma. `data/calculations.json` silme.
+`wasteRate` / `profitRate` state’te kesir. Sırlar `.env` içinde (`APP_PASSWORD`, `COOKIE_SECRET`) — sohbette yazma, koda gömme. `data/calculations.json` silme.
 
 ## Ekran
 
@@ -19,9 +19,9 @@ Tek sayfa `/`: `#login-gate` → `#app-root` (form 01–05 + özet + liste).
 
 ## API
 
-`POST /api/auth/login` · `logout` · `GET /api/auth/check` · `GET|POST|PATCH /api/calculations`
+`POST /api/auth/login` (IP başına deneme limitli) · `logout` · `GET /api/auth/check` · `GET|POST|PATCH /api/calculations`
 
-PATCH yalnız `quoteStatus`. Silme yok.
+`/api/calculations` uçlarının **tamamı `requireAuth` gerektirir** (401). Kimlik yalnız imzalı cookie’den (`req.userName`); gövdedeki `savedBy` yok sayılır. PATCH yalnız `quoteStatus`, beyaz listeli. Bilinmeyen `/api/*` → JSON 404. Silme yok.
 
 ## İş kuralları
 
@@ -38,4 +38,4 @@ Kullanıcı istemeden IIS kopyası / dağıtım yapma. `web.config` iisnode.
 
 ## Değişiklik
 
-Formül → `recalculate()` + `docs/formulas.md`. Form `id` → `index.html` + `populateFormFields`. API → `server.js`.
+Formül → `recalculate()` + `docs/formulas.md`. Form `id` → `index.html` + `populateFormFields`. API → `server.js` (yeni rota `requireAuth`’dan geçmeli). İstemci 401 → `handleUnauthorized()`.

@@ -14,9 +14,10 @@ Yığın: Node.js + Express (`server.js`) + vanilya JS (`public/app.js`). Verita
 
 - Formülleri kullanıcı onaylamadan **değiştirme**. Esas: [docs/formulas.md](docs/formulas.md). `recalculate()` tek kaynak.
 - `wasteRate` ve `profitRate` state’te **kesir** (0.05 = %5). Arayüz yüzde gösterir, kaydederken `/100`.
-- Ortak şifre ve cookie sırrı `server.js` içinde sabit. **Sohbette tekrar etme**; yeni dosyaya kopyalama. Mümkünse `.env`’e taşı, `.env` commit etme.
+- Ortak şifre ve cookie sırrı **`.env` dosyasındadır** (`APP_PASSWORD`, `COOKIE_SECRET`); kodda yedek değer **yok**, tanımsızsa sunucu başlamaz. Sırları **sohbette yazma**, koda gömme, `.env`’i commit etme. Şablon: [.env.example](.env.example).
 - `data/calculations.json` canlı kayıttır. Kullanıcı istemeden silme / boşaltma.
 - Yayın veya IIS kopyası yalnız kullanıcı açıkça istediğinde.
+- Yeni `/api/*` rotası eklerken **`requireAuth`’u geç**. Kullanıcı kimliği yalnız imzalı cookie’den okunur (`req.userName`); gövdedeki `savedBy` gibi alanlara güvenme.
 
 ## Ekranlar
 
@@ -33,16 +34,19 @@ Sarı alan = giriş, mercan alan = otomatik hesap.
 
 ## API
 
-Kimlik: cookie `user_name` (httpOnly, 30 gün). `GET /api/calculations` şu an kimlik kontrolü yapmaz.
+Kimlik: **imzalı** cookie `user_name` (`httpOnly`, `sameSite=strict`, 30 gün, `secure` = `COOKIE_SECURE`). İmza `COOKIE_SECRET` ile doğrulanır; kurcalanmış veya imzasız cookie geçersizdir.
 
-| Method | Yol | İş |
-|--------|-----|-----|
-| POST | `/api/auth/login` | `{ name, password }` → cookie |
-| POST | `/api/auth/logout` | cookie sil |
-| GET | `/api/auth/check` | `{ authenticated, name }` |
-| GET | `/api/calculations` | `{ calculations }` |
-| POST | `/api/calculations` | yeni kayıt; `partName` zorunlu; `formData` = tam form state |
-| PATCH | `/api/calculations` | yalnız `{ id, quoteStatus }` |
+| Method | Yol | Auth | İş |
+|--------|-----|:----:|-----|
+| POST | `/api/auth/login` | — | `{ name, password }` → cookie. IP başına 15 dk’da 10 hatalı denemeden sonra 429. |
+| POST | `/api/auth/logout` | — | cookie sil |
+| GET | `/api/auth/check` | — | `{ authenticated, name }` |
+| GET | `/api/calculations` | **✓** | `{ calculations }` |
+| POST | `/api/calculations` | **✓** | yeni kayıt; `partName` zorunlu; `formData` = tam form state; `savedBy` cookie’den |
+| PATCH | `/api/calculations` | **✓** | yalnız `{ id, quoteStatus }`; durum beyaz listeye karşı doğrulanır |
+| * | diğer `/api/*` | — | 404 JSON (HTML değil) |
+
+Auth’suz istek → `401 { error }`. İstemci 401’de `handleUnauthorized()` ile giriş ekranına döner.
 
 Silme / tam güncelleme endpoint’i yok. Yeni kayıt `unshift` ile listenin başına eklenir.
 
@@ -65,17 +69,18 @@ Silme / tam güncelleme endpoint’i yok. Yeni kayıt `unshift` ile listenin ba�
 - Form alanları: `public/index.html` (`id="inp-…"` / `id="res-…"`) ve `populateFormFields` listesi birlikte
 - API / JSON kayıt: `server.js` + `data/calculations.json` şeması (`docs/architecture.md`)
 - Stil / yazdırma: `public/style.css`
-- IIS: `web.config` (iisnode; `data`, `node_modules`, `iisnode` gizli)
+- IIS: `web.config` (iisnode; `BlockSensitiveFiles` kuralı + `hiddenSegments`: `.env`, `data`, `docs`, `skills`, `node_modules`, `iisnode`, `.git`, `.cursor`)
 
 ## Çalıştırma
 
 ```text
+cp .env.example .env      # APP_PASSWORD ve COOKIE_SECRET doldur
 npm install
 npm start          → http://localhost:3000
 npm run dev        → node --watch server.js
 ```
 
-PORT: `process.env.PORT || 3000`.
+PORT: `process.env.PORT || 3000`. `.env` yoksa sunucu hata verip kapanır.
 
 ## Doğrulama
 

@@ -11,7 +11,7 @@ description: Debak Denizli Bakalit maliyet hesaplama ve teklif yönetim uygulama
 
 ## Sert kural
 
-Formülleri kullanıcı onaylamadan değiştirme. Esas: [formulas.md](formulas.md). Hesap yalnız `public/app.js` → `recalculate()`. Şifreyi sohbette yazma. `data/calculations.json` silme.
+Formülleri kullanıcı onaylamadan değiştirme. Esas: [formulas.md](formulas.md). Hesap yalnız `public/app.js` → `recalculate()`. Sırlar `.env` içinde (`APP_PASSWORD`, `COOKIE_SECRET`) — sohbette yazma, koda gömme. `data/calculations.json` silme.
 
 ## Ekran
 
@@ -19,7 +19,7 @@ Tek sayfa `/`: giriş → form 01–05 + özet kartlar + ortak liste.
 
 ## API
 
-`POST /api/auth/login` · `logout` · `GET /api/auth/check` · `GET|POST|PATCH /api/calculations` — PATCH yalnız `quoteStatus`.
+`POST /api/auth/login` (IP başına deneme limitli) · `logout` · `GET /api/auth/check` · `GET|POST|PATCH /api/calculations` — **hepsi `requireAuth` gerektirir**, PATCH yalnız `quoteStatus` (beyaz listeli). Bilinmeyen `/api/*` → JSON 404.
 
 ## İş kuralları
 

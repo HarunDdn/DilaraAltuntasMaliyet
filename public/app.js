@@ -383,6 +383,7 @@ function setupButtons() {
           formData: state
         })
       });
+      if (res.status === 401) return handleUnauthorized();
       const data = await res.json();
       if (!res.ok || !data.calculation) throw new Error(data.error || 'Kayıt eklenemedi.');
 
@@ -409,10 +410,22 @@ function setupButtons() {
   document.getElementById('btn-export-excel').addEventListener('click', exportToExcel);
 }
 
+// Oturum düştüyse (401) giriş ekranına dön.
+function handleUnauthorized() {
+  rawCalculations = [];
+  showLoginScreen();
+  const errEl = document.getElementById('login-error');
+  if (errEl) {
+    errEl.textContent = 'Oturumunuz sona erdi. Lütfen yeniden giriş yapın.';
+    errEl.style.display = 'block';
+  }
+}
+
 // Server Calculations List
 async function fetchServerCalculations() {
   try {
     const res = await fetch('/api/calculations', { cache: 'no-store' });
+    if (res.status === 401) return handleUnauthorized();
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Kayıtlar alınamadı.');
     rawCalculations = data.calculations || [];
@@ -535,6 +548,7 @@ function renderTable() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, quoteStatus })
         });
+        if (res.status === 401) return handleUnauthorized();
         const data = await res.json();
         if (!res.ok || !data.calculation) throw new Error(data.error || 'Teklif durumu kaydedilemedi.');
 
