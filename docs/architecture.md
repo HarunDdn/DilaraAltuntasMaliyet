@@ -76,13 +76,14 @@ Zorunlu ikisinden biri eksikse **sunucu `exit(1)` ile kapanır** — kodda yedek
 | `quoteStatus` | `''` (sonra PATCH) |
 | `formData` | tam form state (`extras` dahil) |
 | `createdAt` | ISO datetime |
+| `updatedBy`, `updatedAt` | yalnız PUT ile güncellenmiş kayıtta; cookie’deki ad + ISO datetime |
 
-PATCH yalnız `quoteStatus` yazar ve değeri `ALLOWED_QUOTE_STATUS` beyaz listesine karşı doğrular. Kayıt silme yok.
+PATCH yalnız `quoteStatus` yazar ve değeri `ALLOWED_QUOTE_STATUS` beyaz listesine karşı doğrular. PUT `{ id, …POST alanları }` ile form ve sonuçları değiştirir; `id`, `savedBy`, `quoteStatus`, `createdAt` korunur. DELETE `{ id }` kaydı kalıcı siler (arayüzde onay sorulur). Dosya ekleri `data/uploads/` altında; kayıt `formData.attachments` ile bağlanır. DELETE ve PUT, artık hiçbir kaydın kullanmadığı ekleri diskten siler (`removeUnusedAttachments`); hiç kayda bağlanmamış yüklemeler kalır. POST/PUT alanları `calculationFieldsFromBody()` ile ortak okunur.
 
 ## İstemci state
 
 `state` = metin alanları + sayılar + `extras: [{ id, name, price }]`.
-Yüzde alanları (`wasteRate`, `profitRate`) kesir. Ek kalem `id` yeni satırda `ek-{timestamp}`.
+Yüzde alanları (`wasteRate`, `profitRate`, `discountRate`) kesir. Ek kalem `id` yeni satırda `ek-{timestamp}`.
 
 ## Akış
 

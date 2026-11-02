@@ -2,7 +2,7 @@
 
 Tek kaynak: `public/app.js` → `recalculate()`. Sunucu (`server.js`) hesaplamaz; POST sırasında istemcinin gönderdiği `netCost` / `exWorkPrice` / `salePrice` / `expectedRevenue` / `materialAmount` saklanır.
 
-`wasteRate` ve `profitRate` state’te **kesir** (ör. `0.20` = %20). Arayüz yüzde girer (`* 100` göster, `/ 100` yaz).
+`wasteRate`, `profitRate` ve `discountRate` state’te **kesir** (ör. `0.20` = %20). Arayüz yüzde girer (`* 100` göster, `/ 100` yaz).
 
 Payda 0 ise sonuç 0 (`safeDiv`).
 
@@ -20,10 +20,10 @@ grossWeight = netWeight + grossExtra                   # g
 ```text
 rawMaterial  = grossWeight * (1 + wasteRate) * materialPrice / 1000
 mold         = moldPrice / (annualMoldQuantity * amortizationYears)
-machineLabor = (machineHourly + laborHourly) * cycleSeconds / (3600 * cavities)
+machineLabor = (machineHourly + laborHourly) * cycleSeconds / (3600 * cavities) * (1 + wasteRate)
 ```
 
-`materialPrice` EUR/kg. Kalıp: senelik adet × amortisman yılına bölünür.
+`materialPrice` EUR/kg. Kalıp: senelik adet × amortisman yılına bölünür. Makine + işçiliğe de fire oranı eklenir (fireli parçalar da makinede zaman harcar).
 
 ## Kalkülatif faiz
 
@@ -45,10 +45,14 @@ subtotal     = baseCost + extrasSum
 exWork       = subtotal * (1 + profitRate)                    # EX-WORK
 packaging    = packageCost / packageQuantity
 freight      = shipmentCost / shipmentQuantity
-salePrice    = exWork + packaging + freight
+listPrice    = exWork + packaging + freight                   # indirimsiz son fiyat
+discount     = listPrice * discountRate                       # indirim tutarı
+salePrice    = listPrice - discount
 revenue      = salePrice * quantity                             # beklenen ciro
 materialAmount = netWeight * (1 + wasteRate) * materialPrice * quantity / 1000
 ```
+
+İndirim, ambalaj ve nakliye dahil son fiyattan düşülür; EX-WORK indirimsiz kalır. `discountRate` olmayan eski kayıtlarda 0 sayılır.
 
 `materialAmount` **net** ağırlık kullanır (`grossWeight` değil). Hammadde bedeli (`rawMaterial`) **brüt** ağırlık kullanır.
 

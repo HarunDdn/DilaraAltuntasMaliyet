@@ -13,7 +13,7 @@ Yığın: Node.js + Express (`server.js`) + vanilya JS (`public/app.js`). Verita
 ## Sert kurallar
 
 - Formülleri kullanıcı onaylamadan **değiştirme**. Esas: [docs/formulas.md](docs/formulas.md). `recalculate()` tek kaynak.
-- `wasteRate` ve `profitRate` state’te **kesir** (0.05 = %5). Arayüz yüzde gösterir, kaydederken `/100`.
+- `wasteRate`, `profitRate` ve `discountRate` state’te **kesir** (0.05 = %5). Arayüz yüzde gösterir, kaydederken `/100`.
 - Ortak şifre ve cookie sırrı **`.env` dosyasındadır** (`APP_PASSWORD`, `COOKIE_SECRET`); kodda yedek değer **yok**, tanımsızsa sunucu başlamaz. Sırları **sohbette yazma**, koda gömme, `.env`’i commit etme. Şablon: [.env.example](.env.example).
 - `data/calculations.json` canlı kayıttır. Kullanıcı istemeden silme / boşaltma.
 - Yayın veya IIS kopyası yalnız kullanıcı açıkça istediğinde.
@@ -26,9 +26,9 @@ Tek rota (`/` → `public/index.html`). İki görünüm:
 | Görünüm | DOM | İşlev |
 |---------|-----|--------|
 | Giriş | `#login-gate` | Ad + ortak şifre |
-| Uygulama | `#app-root` | Form (01–05), özet kartlar, hesap dökümü, ortak liste |
+| Uygulama | `#app-root` | Form (01–06), özet kartlar, hesap dökümü, ortak liste |
 
-Form bölümleri: 01 Parça bilgileri · 02 Kalıp ve üretim · 03 Ek parça/operasyonlar · 04 Ambalaj ve nakliye · 05 Kâr oranı.
+Form bölümleri: 01 Parça bilgileri · 02 Kalıp ve üretim · 03 Ek parça/operasyonlar · 04 Ambalaj ve nakliye · 05 Kâr oranı · 06 Açıklamalar (`notes`, serbest metin, karakter sınırı yok; `formData` içinde saklanır; teklifte tablonun altında, Excel’de son sütunda) ve altında **Dosya ekle**: dosya seçilince hemen `/api/files`’a yüklenir, formda `attachments: [{ id, name, size }]` tutulur; dosyalar `data/uploads/<id>` (+ `<id>.json` üst veri), git’e girmez.
 
 Sarı alan = giriş, mercan alan = otomatik hesap.
 
@@ -43,25 +43,29 @@ Kimlik: **imzalı** cookie `user_name` (`httpOnly`, `sameSite=strict`, 30 gün, 
 | GET | `/api/auth/check` | — | `{ authenticated, name }` |
 | GET | `/api/calculations` | **✓** | `{ calculations }` |
 | POST | `/api/calculations` | **✓** | yeni kayıt; `partName` zorunlu; `formData` = tam form state; `savedBy` cookie’den |
+| PUT | `/api/calculations` | **✓** | tam güncelleme (`id` + POST alanları); `id`, `savedBy`, `quoteStatus`, `createdAt` korunur; `updatedBy` cookie’den, `updatedAt` eklenir |
 | PATCH | `/api/calculations` | **✓** | yalnız `{ id, quoteStatus }`; durum beyaz listeye karşı doğrulanır |
+| DELETE | `/api/calculations` | **✓** | `{ id }` → kaydı kalıcı siler; başka kayıtta kullanılmayan ekleri de siler |
+| POST | `/api/files` | **✓** | ham dosya gövdesi, ad `X-File-Name` (encodeURIComponent); en çok 25 MB → `{ file: { id, name, type, size } }` |
+| GET | `/api/files/:id` | **✓** | eki indirir (her zaman `attachment` + `application/octet-stream`) |
 | * | diğer `/api/*` | — | 404 JSON (HTML değil) |
 
 Auth’suz istek → `401 { error }`. İstemci 401’de `handleUnauthorized()` ile giriş ekranına döner.
 
-Silme / tam güncelleme endpoint’i yok. Yeni kayıt `unshift` ile listenin başına eklenir.
+Yeni kayıt `unshift` ile listenin başına eklenir. Listede her satırda **Değiştir** (kaydı forma alır, üst buton “Kaydı güncelle” olur → PUT) ve **Sil** (onay sonrası DELETE) vardır; “Formu aç” ise kopya açar (eklenirse yeni kayıt).
 
 ## İş kuralları
 
 - Net maliyet (`baseCost`) = hammadde + kalıp + makine/işçilik + kalkülatif faiz
 - EX-WORK = (net maliyet + ek kalemler) × (1 + kâr oranı)
-- Satış fiyatı = EX-WORK + ambalaj/ad + nakliye/ad
+- Satış fiyatı = (EX-WORK + ambalaj/ad + nakliye/ad) × (1 − indirim oranı)
 - Kalkülatif faiz: kapitalin **%10**’u (`0.10 * adet * brüt × (1+fire) × fiyat / 1000`), birime bölünür
 - `safeDiv(a,b)`: payda 0 ise 0
 - Teklif durumu: `""` · `Değerlendirmede` · `Onaylandı` · `Reddedildi`
 - Liste gruplama: müşteri + proje (Türkçe locale)
 - Yerel taslak: `localStorage` anahtarı `maliyet-formu`
 - Excel: UTF-8 BOM + `;` CSV, `tr-TR` sayı
-- Teklif PDF: aynı müşteri+proje kayıtları; 3’ten fazla parçada Letter landscape; İngilizce mektup
+- Teklif PDF: aynı müşteri+proje kayıtları; 3’ten fazla parçada Letter landscape; “Teklif oluştur” önce dil sorar (Türkçe / English / Deutsch, metinler `QUOTE_TEXTS`)
 
 ## Değişiklik yaparken
 

@@ -19,9 +19,9 @@ Tek sayfa `/`: `#login-gate` → `#app-root` (form 01–05 + özet + liste).
 
 ## API
 
-`POST /api/auth/login` (IP başına deneme limitli) · `logout` · `GET /api/auth/check` · `GET|POST|PATCH /api/calculations`
+`POST /api/auth/login` (IP başına deneme limitli) · `logout` · `GET /api/auth/check` · `GET|POST|PUT|PATCH|DELETE /api/calculations`
 
-`/api/calculations` uçlarının **tamamı `requireAuth` gerektirir** (401). Kimlik yalnız imzalı cookie’den (`req.userName`); gövdedeki `savedBy` yok sayılır. PATCH yalnız `quoteStatus`, beyaz listeli. Bilinmeyen `/api/*` → JSON 404. Silme yok.
+`/api/calculations` uçlarının **tamamı `requireAuth` gerektirir** (401). Kimlik yalnız imzalı cookie’den (`req.userName`); gövdedeki `savedBy` yok sayılır. PUT tam güncelleme (`id`, `savedBy`, `quoteStatus`, `createdAt` korunur). PATCH yalnız `quoteStatus`, beyaz listeli. DELETE `{ id }` kalıcı siler. Bilinmeyen `/api/*` → JSON 404.
 
 ## İş kuralları
 

@@ -137,6 +137,7 @@ main {
   padding: 34px 44px 70px;
 }
 
+/* Üst bar kaydırırken ekranın tepesinde kalır; .compact (app.js) başlığı küçültür. */
 .topbar {
   border-bottom: 1px solid #cfd6cf;
   justify-content: space-between;
@@ -144,6 +145,29 @@ main {
   gap: 32px;
   padding-bottom: 25px;
   display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--canvas);
+}
+
+.topbar.compact {
+  align-items: center;
+  padding: 10px 0;
+  box-shadow: 0 6px 14px -10px rgba(23, 35, 28, .35);
+}
+
+.topbar.compact .company-logo {
+  width: 96px;
+}
+
+.topbar.compact h1 {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.topbar.compact .subtitle {
+  display: none;
 }
 
 .brand-block {
@@ -195,6 +219,10 @@ h1 {
   color: var(--green);
   font-size: 12px;
   font-weight: 700;
+}
+
+.save-state.error {
+  color: #b42318;
 }
 
 button {
@@ -386,7 +414,81 @@ button:hover:not(:disabled) {
   font-weight: 700;
 }
 
-.field input:focus {
+.field textarea {
+  background: var(--input);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.45;
+  outline: none;
+  width: 100%;
+  min-height: 110px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.attachments {
+  margin-top: 14px;
+}
+
+.attachments-head {
+  align-items: center;
+  gap: 12px;
+  display: flex;
+}
+
+.attachments-head > span {
+  color: #49544d;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.attachments-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.attachments-list li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  display: flex;
+}
+
+.attachments-list a {
+  color: var(--green);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  flex: 1;
+  min-width: 0;
+}
+
+.attachments-list small {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.attachments-list button {
+  padding: 4px 9px;
+}
+
+.attachments-status {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+.attachments-status.error {
+  color: #b42318;
+}
+
+.field input:focus, .field textarea:focus {
   border-color: #c2a91d;
   box-shadow: 0 0 0 3px rgba(233, 207, 61, 0.25);
 }
@@ -486,7 +588,7 @@ button:hover:not(:disabled) {
 
 .calculation-panel {
   position: sticky;
-  top: 18px;
+  top: calc(var(--topbar-h, 0px) + 18px);
   overflow: hidden;
 }
 
@@ -753,6 +855,46 @@ tbody tr:last-child td {
   border-color: #d5b96e;
 }
 
+.quote-lang-dialog {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px 24px;
+  min-width: 300px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.quote-lang-dialog::backdrop {
+  background: rgba(23, 35, 28, .45);
+}
+
+.quote-lang-dialog h3 {
+  margin: 0 0 4px;
+}
+
+.quote-lang-target {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.quote-lang-options {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.delete-action {
+  color: #b42318;
+  background: #fff5f4;
+  border-color: #eaa59c;
+}
+
+.project-record-row.editing td {
+  background: var(--input);
+}
+
 .status-editor {
   align-items: center;
   gap: 6px;
@@ -876,7 +1018,11 @@ tbody tr:last-child td {
     max-width: none;
     padding: 12px;
   }
-  .actions, .legend, .subtitle, .records-tools, .table-action {
+  .topbar {
+    position: static;
+    box-shadow: none;
+  }
+  .actions, .legend, .subtitle, .records-tools, .table-action, #btn-add-file, .attachments-list button, .attachments-status {
     display: none;
   }
   .topbar {
@@ -891,7 +1037,7 @@ tbody tr:last-child td {
   .form-section {
     break-inside: avoid;
   }
-  .field input {
+  .field input, .field textarea {
     color: #000;
     -webkit-text-fill-color: black;
     opacity: 1;

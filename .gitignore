@@ -5,6 +5,7 @@ iisnode/
 Thumbs.db
 .env
 .env.local
+data/uploads/
 *.pem
 .vscode/
 .idea/

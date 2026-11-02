@@ -50,6 +50,7 @@
         <button class="secondary" id="btn-print">Yazdır / PDF</button>
         <button class="primary" id="btn-save-local">Kaydet</button>
         <button class="primary list-save" id="btn-save-server">Ortak listeye ekle</button>
+        <button class="secondary" id="btn-cancel-edit" style="display: none;">Düzenlemeden çık</button>
         <button class="secondary" id="btn-logout">Çıkış</button>
       </div>
     </header>
@@ -310,6 +311,35 @@
                 <b>%</b>
               </div>
             </label>
+            <label class="field">
+              <span>İndirim oranı</span>
+              <div class="input-wrap">
+                <input type="number" step="0.1" id="inp-discountRate" />
+                <b>%</b>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- 06: Açıklamalar (karakter sınırı yok) -->
+        <section class="form-section">
+          <div class="section-heading">
+            <span>06</span>
+            <h2>Açıklamalar</h2>
+          </div>
+          <label class="field">
+            <span>Açıklamalar</span>
+            <textarea id="inp-notes" rows="5" placeholder="Teklif veya hesapla ilgili notlarınızı yazın"></textarea>
+          </label>
+
+          <div class="attachments">
+            <div class="attachments-head">
+              <span>Ekli dosyalar</span>
+              <button type="button" class="secondary" id="btn-add-file">+ Dosya ekle</button>
+              <input type="file" id="inp-files" multiple hidden />
+            </div>
+            <ul id="attachments-list" class="attachments-list"></ul>
+            <p id="attachments-status" class="attachments-status"></p>
           </div>
         </section>
       </div>
@@ -364,6 +394,10 @@
           <span>Nakliye</span>
           <b id="p-freight">0,000 €</b>
         </div>
+        <div class="calc-line">
+          <span id="p-discountLabel">İndirim (%0)</span>
+          <b id="p-discountAmount">0,000 €</b>
+        </div>
 
         <div class="grand-total">
           <span>Satış fiyatı</span>
@@ -403,6 +437,18 @@
         </div>
       </div>
       <div id="record-message" class="record-message" style="display: none;"></div>
+
+      <!-- Teklif oluştur → dil seçimi -->
+      <dialog id="quote-lang-dialog" class="quote-lang-dialog">
+        <h3>Teklif dili</h3>
+        <p class="quote-lang-target"></p>
+        <div class="quote-lang-options">
+          <button type="button" class="primary" data-lang="tr">Türkçe</button>
+          <button type="button" class="primary" data-lang="en">English</button>
+          <button type="button" class="primary" data-lang="de">Deutsch</button>
+        </div>
+        <button type="button" class="secondary quote-lang-cancel">Vazgeç</button>
+      </dialog>
       <div class="table-scroll">
         <table id="records-table">
           <thead>

@@ -6,6 +6,10 @@ const path = require('path');
 
 const app = express();
 const DATA_FILE = path.join(__dirname, 'data', 'calculations.json');
+// Form ekleri: <id> dosyanın kendisi, <id>.json adı/türü/boyutu. data/ IIS'te gizli; indirme yalnız API'den.
+const UPLOAD_DIR = path.join(__dirname, 'data', 'uploads');
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // IIS varsayılan istek sınırı (30 MB) altında kalsın
+const FILE_ID_PATTERN = /^[a-f0-9]{32}$/;
 const ENV_FILE = path.join(__dirname, '.env');
 
 // ---------------------------------------------------------------------------
@@ -236,9 +240,9 @@ app.get('/api/calculations', requireAuth, (req, res) => {
   res.json({ calculations });
 });
 
-app.post('/api/calculations', requireAuth, (req, res) => {
-  // Kaydeden her zaman imzalı cookie'den gelir; gövdedeki savedBy yok sayılır.
-  const userName = req.userName;
+// POST ve PUT için ortak: istemcinin gönderdiği form/sonuç alanlarını kayda çevirir.
+// Kimlik, kaydeden, teklif durumu ve tarih damgaları burada değil, rotada atanır.
+function calculationFieldsFromBody(body) {
   const {
     customerName,
     partName,
@@ -252,19 +256,14 @@ app.post('/api/calculations', requireAuth, (req, res) => {
     expectedRevenue,
     materialAmount,
     formData
-  } = req.body || {};
+  } = body || {};
 
-  if (!partName || !String(partName).trim()) {
-    return res.status(400).json({ error: 'Parça adı boş olamaz.' });
-  }
+  if (!partName || !String(partName).trim()) return null;
 
-  const calculations = readCalculations();
-  const newCalculation = {
-    id: 'calc-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex'),
+  return {
     customerName: customerName || '',
     projectName: formData?.projectName || '',
     partName: String(partName).trim(),
-    savedBy: userName,
     articleNo: articleNo || '',
     material: material || '',
     calculationDate: calculationDate || new Date().toISOString().slice(0, 10),
@@ -274,8 +273,23 @@ app.post('/api/calculations', requireAuth, (req, res) => {
     salePrice: Number(salePrice) || 0,
     expectedRevenue: Number(expectedRevenue) || 0,
     materialAmount: Number(materialAmount) || 0,
+    formData: formData || {}
+  };
+}
+
+app.post('/api/calculations', requireAuth, (req, res) => {
+  const fields = calculationFieldsFromBody(req.body);
+  if (!fields) {
+    return res.status(400).json({ error: 'Parça adı boş olamaz.' });
+  }
+
+  const calculations = readCalculations();
+  // Kaydeden her zaman imzalı cookie'den gelir; gövdedeki savedBy yok sayılır.
+  const newCalculation = {
+    id: 'calc-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex'),
+    ...fields,
+    savedBy: req.userName,
     quoteStatus: '',
-    formData: formData || {},
     createdAt: new Date().toISOString()
   };
 
@@ -283,6 +297,56 @@ app.post('/api/calculations', requireAuth, (req, res) => {
   writeCalculations(calculations);
 
   res.json({ calculation: newCalculation });
+});
+
+// Tam güncelleme: form ve sonuçlar değişir; id, savedBy, quoteStatus, createdAt korunur.
+app.put('/api/calculations', requireAuth, (req, res) => {
+  const { id } = req.body || {};
+  if (!id) {
+    return res.status(400).json({ error: 'Kayıt ID gereklidir.' });
+  }
+
+  const fields = calculationFieldsFromBody(req.body);
+  if (!fields) {
+    return res.status(400).json({ error: 'Parça adı boş olamaz.' });
+  }
+
+  const calculations = readCalculations();
+  const index = calculations.findIndex(c => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Kayıt bulunamadı.' });
+  }
+
+  const previousAttachmentIds = attachmentIdsOf(calculations[index]);
+  calculations[index] = {
+    ...calculations[index],
+    ...fields,
+    updatedBy: req.userName,
+    updatedAt: new Date().toISOString()
+  };
+  writeCalculations(calculations);
+  removeUnusedAttachments(previousAttachmentIds, calculations);
+
+  res.json({ calculation: calculations[index] });
+});
+
+app.delete('/api/calculations', requireAuth, (req, res) => {
+  const { id } = req.body || {};
+  if (!id) {
+    return res.status(400).json({ error: 'Kayıt ID gereklidir.' });
+  }
+
+  const calculations = readCalculations();
+  const index = calculations.findIndex(c => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Kayıt bulunamadı.' });
+  }
+
+  const [removed] = calculations.splice(index, 1);
+  writeCalculations(calculations);
+  removeUnusedAttachments(attachmentIdsOf(removed), calculations);
+
+  res.json({ deleted: id });
 });
 
 // Arayüzdeki dört seçenek dışında bir durum yazılamaz.
@@ -309,6 +373,75 @@ app.patch('/api/calculations', requireAuth, (req, res) => {
   writeCalculations(calculations);
 
   res.json({ calculation: calculations[index] });
+});
+
+// ---------------------------------------------------------------------------
+// Dosya ekleri — yükle / indir. Kayıtla ilişki formData.attachments üzerinden.
+// ---------------------------------------------------------------------------
+function attachmentIdsOf(calc) {
+  const list = calc?.formData?.attachments;
+  return Array.isArray(list) ? list.map(a => a?.id).filter(Boolean) : [];
+}
+
+// Silinen kayıtların ekleri, başka kayıt (ör. "Formu aç" ile çoğaltılmış kopya) kullanmıyorsa silinir.
+function removeUnusedAttachments(ids, remainingCalculations) {
+  const stillUsed = new Set(remainingCalculations.flatMap(attachmentIdsOf));
+  for (const id of ids) {
+    if (!FILE_ID_PATTERN.test(id) || stillUsed.has(id)) continue;
+    for (const file of [path.join(UPLOAD_DIR, id), path.join(UPLOAD_DIR, id + '.json')]) {
+      try { fs.unlinkSync(file); } catch {}
+    }
+  }
+}
+
+// Gövde ham dosya; ad X-File-Name başlığında (encodeURIComponent). Ek bağımlılık gerekmesin diye multipart değil.
+app.post(
+  '/api/files',
+  requireAuth,
+  express.raw({ type: () => true, limit: MAX_UPLOAD_BYTES }),
+  (req, res) => {
+    let name = '';
+    try { name = decodeURIComponent(req.get('X-File-Name') || ''); } catch {}
+    name = path.basename(name).trim().slice(0, 255);
+    if (!name) {
+      return res.status(400).json({ error: 'Dosya adı eksik.' });
+    }
+    if (!Buffer.isBuffer(req.body) || !req.body.length) {
+      return res.status(400).json({ error: 'Dosya boş.' });
+    }
+
+    const meta = {
+      id: crypto.randomBytes(16).toString('hex'),
+      name,
+      type: req.get('Content-Type') || 'application/octet-stream',
+      size: req.body.length,
+      uploadedBy: req.userName,
+      uploadedAt: new Date().toISOString()
+    };
+
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    fs.writeFileSync(path.join(UPLOAD_DIR, meta.id), req.body);
+    fs.writeFileSync(path.join(UPLOAD_DIR, meta.id + '.json'), JSON.stringify(meta, null, 2), 'utf-8');
+
+    res.json({ file: meta });
+  }
+);
+
+app.get('/api/files/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const filePath = path.join(UPLOAD_DIR, id);
+  if (!FILE_ID_PATTERN.test(id) || !fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Dosya bulunamadı.' });
+  }
+
+  let meta = {};
+  try { meta = JSON.parse(fs.readFileSync(filePath + '.json', 'utf-8')); } catch {}
+  const name = meta.name || 'dosya';
+
+  // Her zaman indirme olarak ve genel türle: yüklenen HTML/SVG tarayıcıda çalışmasın.
+  res.set('Content-Type', 'application/octet-stream');
+  res.set('Content-Disposition', `attachment; filename="${name.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`);
+  res.sendFile(filePath);
 });
 
 // ---------------------------------------------------------------------------

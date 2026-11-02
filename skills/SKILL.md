@@ -19,7 +19,7 @@ Tek sayfa `/`: giriş → form 01–05 + özet kartlar + ortak liste.
 
 ## API
 
-`POST /api/auth/login` (IP başına deneme limitli) · `logout` · `GET /api/auth/check` · `GET|POST|PATCH /api/calculations` — **hepsi `requireAuth` gerektirir**, PATCH yalnız `quoteStatus` (beyaz listeli). Bilinmeyen `/api/*` → JSON 404.
+`POST /api/auth/login` (IP başına deneme limitli) · `logout` · `GET /api/auth/check` · `GET|POST|PUT|PATCH|DELETE /api/calculations` — **hepsi `requireAuth` gerektirir**, PUT tam güncelleme, PATCH yalnız `quoteStatus` (beyaz listeli), DELETE `{ id }`. Bilinmeyen `/api/*` → JSON 404.
 
 ## İş kuralları
 
